@@ -74,42 +74,42 @@
 
     <div class="test-section">
         <h2>1. 读取 default.prop</h2>
-        <button onclick="window.android.readDefaultProp()">读取 default.prop</button>
+        <button onclick="window.wpsAndroidBridge.readDefaultProp()">读取 default.prop</button>
         <div id="defaultPropContent"></div>
     </div>
 
     <div class="test-section">
         <h2>2. 获取所有 Prop 属性</h2>
-        <button onclick="window.android.getAllProps()">获取所有 Prop</button>
+        <button onclick="window.wpsAndroidBridge.getAllProps()">获取所有 Prop</button>
         <div id="allProps"></div>
     </div>
 
     <div class="test-section">
         <h2>3. 获取设备信息</h2>
-        <button onclick="window.android.getDeviceInfo()">获取设备信息</button>
+        <button onclick="window.wpsAndroidBridge.getDeviceInfo()">获取设备信息</button>
         <div id="deviceInfo"></div>
     </div>
 
     <div class="test-section">
         <h2>4. 调用系统相机</h2>
-        <button onclick="window.android.openCamera()">打开相机</button>
+        <button onclick="window.wpsAndroidBridge.openCamera()">打开相机</button>
         <div id="cameraResult"></div>
     </div>
 
     <div class="test-section">
         <h2>5. 获取位置信息</h2>
-        <button onclick="window.android.getLocation()">获取位置</button>
+        <button onclick="window.wpsAndroidBridge.getLocation()">获取位置</button>
         <div id="locationInfo"></div>
     </div>
 
     <div class="test-section">
         <h2>6. 显示 Toast 消息</h2>
-        <button onclick="window.android.showToast()">显示 Toast</button>
+        <button onclick="window.wpsAndroidBridge.showToast()">显示 Toast</button>
     </div>
 
     <div class="test-section">
         <h2>7. 调用系统分享</h2>
-        <button onclick="window.android.shareContent()">分享内容</button>
+        <button onclick="window.wpsAndroidBridge.shareContent()">分享内容</button>
     </div>
 
     <script>
@@ -200,16 +200,16 @@
         };
 
         // Android Bridge 实现
-        window.android = {
+        window.wpsAndroidBridge = {
             // 调用原生方法
             callNative: function(method, params, callback) {
                 try {
-                    if (window.android) {
+                    if (window.wpsAndroidBridge) {
                         // Android 平台调用
                         if (callback) {
-                            window.android[method](JSON.stringify(params), callback);
+                            window.wpsAndroidBridge[method](JSON.stringify(params), callback);
                         } else {
-                            window.android[method](JSON.stringify(params));
+                            window.wpsAndroidBridge[method](JSON.stringify(params));
                         }
                     } else {
                         throw new Error('Android Bridge 未初始化');
@@ -262,16 +262,16 @@
                     const props = {};
                     
                     // 获取 Android 平台的所有属性
-                    if (window.android) {
-                        for (let prop in window.android) {
-                            if (typeof window.android[prop] === 'function') {
+                    if (window.wpsAndroidBridge) {
+                        for (let prop in window.wpsAndroidBridge) {
+                            if (typeof window.wpsAndroidBridge[prop] === 'function') {
                                 props[prop] = {
                                     type: 'function',
                                     platform: 'android'
                                 };
                             } else {
                                 props[prop] = {
-                                    type: typeof window.android[prop],
+                                    type: typeof window.wpsAndroidBridge[prop],
                                     platform: 'android'
                                 };
                             }
