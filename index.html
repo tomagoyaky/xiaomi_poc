@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSBridge 测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 1000;
+            animation: fadeInOut 3s ease-in-out;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <h1>JSBridge 功能测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 读取 default.prop</h2>
+        <button onclick="window.JSBridge.readDefaultProp()">读取 default.prop</button>
+        <div id="defaultPropContent"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 获取所有 Prop 属性</h2>
+        <button onclick="window.JSBridge.getAllProps()">获取所有 Prop</button>
+        <div id="allProps"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 获取设备信息</h2>
+        <button onclick="window.JSBridge.getDeviceInfo()">获取设备信息</button>
+        <div id="deviceInfo"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 调用系统相机</h2>
+        <button onclick="window.JSBridge.openCamera()">打开相机</button>
+        <div id="cameraResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. 获取位置信息</h2>
+        <button onclick="window.JSBridge.getLocation()">获取位置</button>
+        <div id="locationInfo"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. 显示 Toast 消息</h2>
+        <button onclick="window.JSBridge.showToast()">显示 Toast</button>
+    </div>
+
+    <div class="test-section">
+        <h2>7. 调用系统分享</h2>
+        <button onclick="window.JSBridge.shareContent()">分享内容</button>
+    </div>
+
+    <script>
+        // 全局异常处理
+        window.onerror = function(message, source, lineno, colno, error) {
+            showError(message);
+            return true;
+        };
+
+        // 显示错误消息
+        function showError(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = `错误: ${message}`;
+            document.body.appendChild(toast);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // JSBridge 实现
+        window.JSBridge = {
+            // 调用原生方法
+            callNative: function(method, params, callback) {
+                try {
+                    if (window.android) {
+                        // Android 平台调用
+                        if (callback) {
+                            window.android[method](JSON.stringify(params), callback);
+                        } else {
+                            window.android[method](JSON.stringify(params));
+                        }
+                    } else if (window.webkit && window.webkit.messageHandlers) {
+                        // iOS 平台调用
+                        if (callback) {
+                            window.webkit.messageHandlers[method].postMessage({
+                                params: params,
+                                callback: callback
+                            });
+                        } else {
+                            window.webkit.messageHandlers[method].postMessage(params);
+                        }
+                    } else {
+                        throw new Error('JSBridge 未初始化');
+                    }
+                } catch (e) {
+                    showError(e.message);
+                    console.error('JSBridge 调用失败:', e);
+                }
+            },
+
+            // 读取 default.prop 文件
+            readDefaultProp: function() {
+                try {
+                    // 调用原生方法读取文件
+                    this.callNative('readFile', {
+                        path: '/pro/default.prop'
+                    }, function(response) {
+                        try {
+                            const result = JSON.parse(response);
+                            const resultDiv = document.getElementById('defaultPropContent');
+                            
+                            if (result.success) {
+                                // 将内容按行分割并格式化显示
+                                const content = result.content.split('\n')
+                                    .map(line => line.trim())
+                                    .filter(line => line && !line.startsWith('#'))
+                                    .join('\n');
+                                
+                                resultDiv.innerHTML = `
+                                    <h3>default.prop 内容：</h3>
+                                    <pre>${content}</pre>
+                                `;
+                            } else {
+                                throw new Error(result.error || '读取文件失败');
+                            }
+                        } catch (e) {
+                            showError(e.message);
+                            console.error('解析响应失败:', e);
+                        }
+                    });
+                } catch (e) {
+                    showError(e.message);
+                    console.error('调用 readFile 失败:', e);
+                }
+            },
+
+            // 获取所有 Prop 属性
+            getAllProps: function() {
+                try {
+                    const props = {};
+                    
+                    // 获取 Android 平台的所有属性
+                    if (window.android) {
+                        for (let prop in window.android) {
+                            if (typeof window.android[prop] === 'function') {
+                                props[prop] = {
+                                    type: 'function',
+                                    platform: 'android'
+                                };
+                            } else {
+                                props[prop] = {
+                                    type: typeof window.android[prop],
+                                    platform: 'android'
+                                };
+                            }
+                        }
+                    }
+                    
+                    // 获取 iOS 平台的所有属性
+                    if (window.webkit && window.webkit.messageHandlers) {
+                        for (let prop in window.webkit.messageHandlers) {
+                            props[prop] = {
+                                type: 'function',
+                                platform: 'ios'
+                            };
+                        }
+                    }
+
+                    // 显示结果
+                    const resultDiv = document.getElementById('allProps');
+                    resultDiv.innerHTML = `
+                        <h3>可用的 JSBridge 属性：</h3>
+                        <pre>${JSON.stringify(props, null, 2)}</pre>
+                    `;
+
+                    return props;
+                } catch (e) {
+                    showError(e.message);
+                    console.error('获取属性失败:', e);
+                }
+            },
+
+            // 获取设备信息
+            getDeviceInfo: function() {
+                try {
+                    this.callNative('getDeviceInfo', {}, function(response) {
+                        try {
+                            const deviceInfo = JSON.parse(response);
+                            document.getElementById('deviceInfo').innerHTML = `
+                                <p>设备型号: ${deviceInfo.model}</p>
+                                <p>系统版本: ${deviceInfo.osVersion}</p>
+                                <p>设备ID: ${deviceInfo.deviceId}</p>
+                            `;
+                        } catch (e) {
+                            showError(e.message);
+                            console.error('解析设备信息失败:', e);
+                        }
+                    });
+                } catch (e) {
+                    showError(e.message);
+                    console.error('获取设备信息失败:', e);
+                }
+            },
+
+            // 打开相机
+            openCamera: function() {
+                try {
+                    this.callNative('openCamera', {}, function(response) {
+                        try {
+                            const result = JSON.parse(response);
+                            if (result.success) {
+                                document.getElementById('cameraResult').innerHTML = `
+                                    <p>图片路径: ${result.imagePath}</p>
+                                    <img src="${result.imagePath}" style="max-width: 200px;">
+                                `;
+                            } else {
+                                throw new Error('拍照失败');
+                            }
+                        } catch (e) {
+                            showError(e.message);
+                            console.error('解析相机结果失败:', e);
+                        }
+                    });
+                } catch (e) {
+                    showError(e.message);
+                    console.error('打开相机失败:', e);
+                }
+            },
+
+            // 获取位置信息
+            getLocation: function() {
+                try {
+                    this.callNative('getLocation', {}, function(response) {
+                        try {
+                            const location = JSON.parse(response);
+                            document.getElementById('locationInfo').innerHTML = `
+                                <p>经度: ${location.longitude}</p>
+                                <p>纬度: ${location.latitude}</p>
+                                <p>地址: ${location.address}</p>
+                            `;
+                        } catch (e) {
+                            showError(e.message);
+                            console.error('解析位置信息失败:', e);
+                        }
+                    });
+                } catch (e) {
+                    showError(e.message);
+                    console.error('获取位置信息失败:', e);
+                }
+            },
+
+            // 显示 Toast 消息
+            showToast: function() {
+                try {
+                    this.callNative('showToast', {
+                        message: '这是一个测试 Toast 消息',
+                        duration: 2000
+                    });
+                } catch (e) {
+                    showError(e.message);
+                    console.error('显示 Toast 失败:', e);
+                }
+            },
+
+            // 分享内容
+            shareContent: function() {
+                try {
+                    this.callNative('shareContent', {
+                        title: '测试分享',
+                        content: '这是一个测试分享内容',
+                        url: 'https://example.com'
+                    });
+                } catch (e) {
+                    showError(e.message);
+                    console.error('分享内容失败:', e);
+                }
+            }
+        };
+    </script>
+</body>
+</html> 
