@@ -74,42 +74,42 @@
 
     <div class="test-section">
         <h2>1. 读取 default.prop</h2>
-        <button onclick="window.JSBridge.readDefaultProp()">读取 default.prop</button>
+        <button onclick="window.android.readDefaultProp()">读取 default.prop</button>
         <div id="defaultPropContent"></div>
     </div>
 
     <div class="test-section">
         <h2>2. 获取所有 Prop 属性</h2>
-        <button onclick="window.JSBridge.getAllProps()">获取所有 Prop</button>
+        <button onclick="window.android.getAllProps()">获取所有 Prop</button>
         <div id="allProps"></div>
     </div>
 
     <div class="test-section">
         <h2>3. 获取设备信息</h2>
-        <button onclick="window.JSBridge.getDeviceInfo()">获取设备信息</button>
+        <button onclick="window.android.getDeviceInfo()">获取设备信息</button>
         <div id="deviceInfo"></div>
     </div>
 
     <div class="test-section">
         <h2>4. 调用系统相机</h2>
-        <button onclick="window.JSBridge.openCamera()">打开相机</button>
+        <button onclick="window.android.openCamera()">打开相机</button>
         <div id="cameraResult"></div>
     </div>
 
     <div class="test-section">
         <h2>5. 获取位置信息</h2>
-        <button onclick="window.JSBridge.getLocation()">获取位置</button>
+        <button onclick="window.android.getLocation()">获取位置</button>
         <div id="locationInfo"></div>
     </div>
 
     <div class="test-section">
         <h2>6. 显示 Toast 消息</h2>
-        <button onclick="window.JSBridge.showToast()">显示 Toast</button>
+        <button onclick="window.android.showToast()">显示 Toast</button>
     </div>
 
     <div class="test-section">
         <h2>7. 调用系统分享</h2>
-        <button onclick="window.JSBridge.shareContent()">分享内容</button>
+        <button onclick="window.android.shareContent()">分享内容</button>
     </div>
 
     <script>
@@ -199,8 +199,8 @@
             findJSBridgeObjects();
         };
 
-        // JSBridge 实现
-        window.JSBridge = {
+        // Android Bridge 实现
+        window.android = {
             // 调用原生方法
             callNative: function(method, params, callback) {
                 try {
@@ -211,22 +211,12 @@
                         } else {
                             window.android[method](JSON.stringify(params));
                         }
-                    } else if (window.webkit && window.webkit.messageHandlers) {
-                        // iOS 平台调用
-                        if (callback) {
-                            window.webkit.messageHandlers[method].postMessage({
-                                params: params,
-                                callback: callback
-                            });
-                        } else {
-                            window.webkit.messageHandlers[method].postMessage(params);
-                        }
                     } else {
-                        throw new Error('JSBridge 未初始化');
+                        throw new Error('Android Bridge 未初始化');
                     }
                 } catch (e) {
                     showError(e.message);
-                    console.error('JSBridge 调用失败:', e);
+                    console.error('Android Bridge 调用失败:', e);
                 }
             },
 
@@ -287,21 +277,11 @@
                             }
                         }
                     }
-                    
-                    // 获取 iOS 平台的所有属性
-                    if (window.webkit && window.webkit.messageHandlers) {
-                        for (let prop in window.webkit.messageHandlers) {
-                            props[prop] = {
-                                type: 'function',
-                                platform: 'ios'
-                            };
-                        }
-                    }
 
                     // 显示结果
                     const resultDiv = document.getElementById('allProps');
                     resultDiv.innerHTML = `
-                        <h3>可用的 JSBridge 属性：</h3>
+                        <h3>可用的 Android Bridge 属性：</h3>
                         <pre>${JSON.stringify(props, null, 2)}</pre>
                     `;
 
