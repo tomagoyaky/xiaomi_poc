@@ -67,6 +67,12 @@
     <h1>JSBridge 功能测试</h1>
     
     <div class="test-section">
+        <h2>0. 查找 JSBridge 对象</h2>
+        <button onclick="findJSBridgeObjects()">查找 JSBridge 对象</button>
+        <div id="bridgeFinderResult"></div>
+    </div>
+
+    <div class="test-section">
         <h2>1. 读取 default.prop</h2>
         <button onclick="window.JSBridge.readDefaultProp()">读取 default.prop</button>
         <div id="defaultPropContent"></div>
@@ -125,6 +131,73 @@
                 toast.remove();
             }, 3000);
         }
+
+        // 查找 JSBridge 对象
+        function findJSBridgeObjects() {
+            const possibleBridgeObjects = [];
+            const commonBridgeNames = [
+                'WebViewJavascriptBridge',
+                'AndroidBridge',
+                'NativeBridge',
+                'JSBridge',
+                'Bridge',
+                'WebViewBridge',
+                'HybridBridge',
+                'NativeJSBridge',
+                'android',
+                'webkit'
+            ];
+
+            // 遍历 window 对象的所有属性
+            for (const prop in window) {
+                try {
+                    const value = window[prop];
+                    
+                    // 检查是否是对象或函数
+                    if (value && (typeof value === 'object' || typeof value === 'function')) {
+                        // 检查属性名是否包含常见的桥接关键词
+                        const propName = prop.toLowerCase();
+                        if (commonBridgeNames.some(name => propName.includes(name.toLowerCase()))) {
+                            possibleBridgeObjects.push({
+                                name: prop,
+                                type: typeof value,
+                                value: value
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`检查属性 ${prop} 时出错:`, e);
+                }
+            }
+
+            // 显示结果
+            const resultDiv = document.getElementById('bridgeFinderResult');
+            let resultText = '找到的可能的 JSBridge 对象:\n\n';
+            
+            if (possibleBridgeObjects.length === 0) {
+                resultText += '未找到任何可能的 JSBridge 对象';
+            } else {
+                possibleBridgeObjects.forEach(bridge => {
+                    resultText += `- ${bridge.name} (类型: ${bridge.type})\n`;
+                    if (bridge.type === 'object') {
+                        resultText += '  方法:\n';
+                        for (const method in bridge.value) {
+                            if (typeof bridge.value[method] === 'function') {
+                                resultText += `    - ${method}\n`;
+                            }
+                        }
+                    }
+                    resultText += '\n';
+                });
+            }
+            
+            resultDiv.innerHTML = `<pre>${resultText}</pre>`;
+        }
+
+        // 页面加载完成后自动执行一次查找
+        window.onload = function() {
+            findJSBridgeObjects();
+        };
 
         // JSBridge 实现
         window.JSBridge = {
